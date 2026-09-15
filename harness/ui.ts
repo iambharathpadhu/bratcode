@@ -2,26 +2,36 @@
 // util.styleText, no chalk/picocolors) so nothing extra has to install
 // correctly on whatever laptop this gets demoed from.
 //
-// Colors mirror the slide deck's palette on purpose (electric-blue accent): the live
-// terminal and the slides should use the same green/amber/red vocabulary
-// for safe/confirm/blocked, so the room isn't learning two color systems.
+// Colors mirror the slide deck (and iambharathpadhu.vercel.app) on purpose:
+// one amber accent, mint for "safe", amber for "confirm", red for "blocked".
+// The live terminal and the slides use the same vocabulary, so the room
+// isn't learning two color systems.
 
 import { styleText } from "node:util";
 
+// 256-color escapes for the two brand hues the 16-color ANSI set can't hit:
+// amber (#ffa62b ≈ 214) and mint (#5ee6a8 ≈ 85). Every modern terminal
+// (Terminal.app, iTerm2, VS Code, Warp) renders these; NO_COLOR is honored.
+const c256 = (n: number, bold = false) => (s: string) =>
+  process.env.NO_COLOR ? s : `\x1b[${bold ? "1;" : ""}38;5;${n}m${s}\x1b[0m`;
+const amber = c256(214, true);
+const amberSoft = c256(222, true);
+const mint = c256(85, true);
+
 export const ui = {
-  you: (s: string) => styleText(["bold", "cyan"], s),
-  agent: (s: string) => styleText(["bold", "magenta"], s),
-  tool: (s: string) => styleText(["bold", "green"], s),
-  confirm: (s: string) => styleText(["bold", "yellow"], s),
+  you: amber,
+  agent: (s: string) => styleText("bold", s), // inherits the terminal's default so it reads on light and dark themes
+  tool: mint,
+  confirm: amber,
   blocked: (s: string) => styleText(["bold", "red"], s),
   refused: (s: string) => styleText("red", s),
   denied: (s: string) => styleText("gray", s),
-  skipped: (s: string) => styleText("yellow", s),
+  skipped: c256(214),
   dim: (s: string) => styleText("gray", s),
-  accent: (s: string) => styleText(["bold", "blueBright"], s), // electric blue — matches the deck
-  banner: (s: string) => styleText("bold", s), // no explicit color: inherits the terminal's default so it reads on light and dark themes
-  wake: (s: string) => styleText(["bold", "cyan"], s),
-  checkpoint: (s: string) => styleText(["bold", "blue"], s),
+  accent: amber, // the one brand accent — matches the deck and the site
+  banner: (s: string) => styleText("bold", s),
+  wake: mint,
+  checkpoint: amberSoft,
 };
 
 // Every status tag the harness prints — [POLICY], [RUN], [CONFIRM], … — is
