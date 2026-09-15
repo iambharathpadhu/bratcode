@@ -80,16 +80,18 @@ Say the long title once. Then straight to slide 2.
 
 ## Slide 2 — Who's talking (10 seconds, not 60)
 
-Photo, name, "Senior Software Engineer @ Chaine", one casual line. That's
-the whole slide.
+Photo, name, "Senior Software Engineer II · Chain", one casual line, and
+the gag lifted from the website: _"I love ~~Messi~~ more than Messi"_ with
+"my wife" handwritten above the strikethrough and "(she proofreads my
+slides)" in the corner. That's the whole slide.
 
 **Say, fast, not reading:**
 
-> "Barath. Senior engineer at Chaine. Coimbatore boy. Messi fan first,
-> engineer second. Five years of breaking things in tech and occasionally
-> learning from them."
+> "Barath. Senior engineer at Chain. Coimbatore boy. Five years of breaking
+> things in tech and occasionally learning from them."
 
-Move. Nobody came for the bio.
+Then shut up for two seconds and let them read the strikethrough. Don't
+explain it. If it lands, it lands. Move. Nobody came for the bio.
 
 ### Ask the room first (cap at 30 seconds, ONE exchange, then move)
 
@@ -580,10 +582,12 @@ past `All steps complete.` Say it, don't read it:
 
 Let it sit a second. Don't rush into Q&A.
 
-**Thank-you slide:** "Questions?" on the left with the repo
-**github.com/iambharathpadhu/bratcode** and your handles; the QR to
-**iambharathpadhu.vercel.app** (which links everything) on the right. Say the repo out
-loud. Leave the QR up. Half the room clones it before you're off stage.
+**Closing slide:** "Let's talk." (with "i actually reply" scribbled next to
+it, same as the website) on the left with the repo
+**github.com/iambharathpadhu/bratcode** and your GitHub / X / LinkedIn; the
+QR on the right lands on **iambharathpadhu.vercel.app/#contact**, the Say-hi
+section, which has every handle and the email. Say the repo out loud. Leave
+the QR up. Half the room clones it before you're off stage.
 
 ---
 
