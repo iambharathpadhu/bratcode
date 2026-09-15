@@ -2,7 +2,7 @@
 // util.styleText, no chalk/picocolors) so nothing extra has to install
 // correctly on whatever laptop this gets demoed from.
 //
-// Colors mirror the slide deck (and iambharathpadhu.vercel.app) on purpose:
+// Colors mirror the accompanying slide deck on purpose:
 // one amber accent, mint for "safe", amber for "confirm", red for "blocked".
 // The live terminal and the slides use the same vocabulary, so the room
 // isn't learning two color systems.
@@ -58,12 +58,12 @@ export function header(step: string, model: string): string {
 // Flavor text for the thinking spinner below — same idea as Claude Code's
 // own rotating status verbs, just with the serial numbers filed off.
 export const INTERACTIVE_JOKES = [
-  "I will not let Barath down…",
-  "Working at max potential to save Barath's demo…",
-  "Channeling all 7 billion parameters for Barath…",
-  "Would rather crash than embarrass Barath on stage…",
-  "Absolutely not choking in front of ReactJS Bangalore…",
-  "Thinking as hard as physically possible for Barath…",
+  "I will not let you down…",
+  "Working at max potential to save this demo…",
+  "Channeling all 7 billion parameters…",
+  "Would rather crash than embarrass you on stage…",
+  "Absolutely not choking in front of a live audience…",
+  "Thinking as hard as physically possible…",
   "Percolating…",
   "Noodling…",
 ];
@@ -72,11 +72,11 @@ export const INTERACTIVE_JOKES = [
 // genuinely unsupervised, so the joke leans into "nobody's watching" instead
 // of the interactive pool's stage-fright framing.
 export const AUTONOMOUS_JOKES = [
-  "No one's watching. Still not letting Barath down…",
+  "No one's watching. Still not letting you down…",
   "Cruise control, maximum paranoia…",
-  "Running solo. Full send for Barath anyway…",
-  "Autonomous and still terrified of disappointing Barath…",
-  "Nobody's typing. Doesn't matter. Still not blowing this for Barath…",
+  "Running solo. Full send anyway…",
+  "Autonomous and still terrified of disappointing you…",
+  "Nobody's typing. Doesn't matter. Still not blowing this…",
 ];
 
 // The durable-execution demo leaves a deliberate window before each step
