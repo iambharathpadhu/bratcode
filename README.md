@@ -1,153 +1,216 @@
-# Designing a Personal AI Harness
+# bratcode
 
-> **You're on `step-3-tools-no-permission`** — step 3 of a 6-step build.
-> Real file tools, every call runs the instant it's requested — the naive agent everyone writes first. See the full progression
-> table on [`main`](https://github.com/iambharathpadhu/bratcode#the-6-step-build)
-> or jump straight to what comes next: `bratcode step4`.
+> **You're on `step-3-tools-no-permission`**, step 3 of the six-step build.
+> Real file tools, and every call runs the instant it's requested: the naive agent everyone writes first.
+> The full progression table is on [`main`](../../tree/main#the-six-step-build); jump to what comes next with `bratcode step4` (or `gc4`).
 
-A from-scratch, ~250-line agent harness built for a live conference talk. No
-frameworks, no cloud API keys — everything runs against a local model via
-[Ollama](https://ollama.com) so the demo works even on bad venue wifi.
+**The model is the engine. You still have to build the car.**
 
-The point isn't the code. It's that four small, boring design decisions —
-mediated tools, tiered permissions, persistent memory, and durable execution
-— are what separate "a script with an LLM in it" from something that
-survives being unplugged, told no, and crashed mid-task. (`main` also carries
-a bonus fifth decision, a self-scheduling autonomous loop, not part of the
-live talk — see below.)
+A personal AI agent harness in about 250 lines of TypeScript. No framework,
+no SDK, no API key: it talks to a local model through
+[Ollama](https://ollama.com), so it runs offline and costs $0.00 per token.
 
-## Setup (do this before the talk, not during it)
+It is built in six steps, and every step is a git branch. `git diff` any two
+consecutive branches and you see exactly which capability was added and why.
+Clone it, run it, then make it yours.
 
-```bash
-brew install ollama
-brew services start ollama
-ollama pull qwen2.5:7b      # good tool-calling behavior, ~4.7GB
-# ollama pull llama3.2:3b   # faster fallback if qwen is too slow on your laptop
-
-npm install                 # do this BEFORE opening the folder in VS Code —
-                            # a fresh clone shows TS squiggles until @types/node
-                            # and tsx are installed. They're not real errors.
-./demo/install-bratcode.sh  # puts the `bratcode` command on your PATH (no sudo)
-bratcode doctor             # node_modules, typecheck, Ollama up, model pulled
+```
+╭──────────────────────────────────────────────────────╮
+│ bratcode · step 4 · tiered permissions               │
+│ engine: qwen2.5:7b · via Ollama on localhost · $0.00 │
+╰──────────────────────────────────────────────────────╯
+you> write notes.txt with the text "hello", then delete it
+  [POLICY]    confirm
+  [CONFIRM]   run write_file({"path":"notes.txt","content":"hello"})? [y/N] y
+  [RUN]       write_file({"path":"notes.txt","content":"hello"})
+              → Wrote 5 chars to notes.txt (verified on disk)
+  [POLICY]    blocked
+  [BLOCKED]   "delete_file" never runs.
+agent> notes.txt is written. Deleting it is blocked by policy.
+  tokens: 957 in · 63 out · session total 2527 · $0.00 · running locally
 ```
 
-**Use `qwen2.5:7b` for the live talk. This isn't a mild preference — it's
-required.** `llama3.2:3b` is noticeably chattier and looser about calling a
-tool exactly once per instruction — in testing it sometimes called the same
-tool repeatedly on a single request instead of stopping after one. Step 6's
-Ctrl-C timing depends on each step making exactly one predictable tool call
-inside its pause window; a model that loops or rambles first blows that
-timing. `qwen2.5:7b` runs the three-step script clean, once, correctly,
-every time.
+## Why
 
-`llama3.2:3b` is kept pulled only as a last-resort emergency fallback if
-`qwen2.5:7b` is somehow unusable on the presenting machine — and if you do
-fall back, raise `HARNESS_STEP_PAUSE_MS` generously so a chattier model still
-finishes each step inside the pause.
+An agent is a model plus a harness. The model generates. The harness does
+the four jobs that decide whether the thing is safe to leave running:
 
-## Running it
+| Job | What it means | Where it lives here |
+|---|---|---|
+| **Constrain** | what the model *may* do | the tier map in `harness/tools.ts` (step 4) |
+| **Inform** | what it *should* do | `harness/system-prompt.ts` (step 2) |
+| **Verify** | what it *actually* did | tool results fed back into the loop (step 3) |
+| **Recover** | when it dies mid-task | `memory.json` and `checkpoint.json` (steps 5 and 6) |
 
-Everything runs through one command, `bratcode` (installed by
-`demo/install-bratcode.sh` as a symlink to `bin/bratcode`, so it keeps
-working as you `git checkout` between step branches):
+Same model on two different harnesses can score 46% and 80% on the same
+benchmark. The engine is the easy part now. The car is the job.
+
+## Quick start
+
+Requires Node 20+ and [Homebrew](https://brew.sh) on macOS (or an Ollama
+install of your choice elsewhere).
 
 ```bash
-bratcode            # the interactive harness on whatever branch you're on
-bratcode durable    # step 6: durable execution — checkpoint + crash + resume
-bratcode watch      # bonus, not part of the live talk: autonomous mode
-bratcode reset      # wipe memory.json / checkpoint.json / sandbox for a fresh run
-bratcode step1      # git checkout step-1-bare-model, then reset (…step2 … step6)
-gc1 … gc6           # the same thing, two keystrokes: gc3 == bratcode step3
-bratcode doctor     # preflight check — run it before you walk on stage
+brew install ollama && brew services start ollama
+ollama pull qwen2.5:7b            # ~4.7 GB, calls tools once and cleanly
+
+git clone https://github.com/iambharathpadhu/bratcode && cd bratcode
+npm install
+./demo/install-bratcode.sh        # symlinks `bratcode` and gc1…gc6 onto your PATH
+bratcode doctor                   # node_modules, typecheck, Ollama up, model pulled
+
+gc1                               # check out step 1 with a fresh state
+bratcode                          # talk to the bare model
 ```
 
-On stage, use the `gc` shortcuts: `gc1` switches to step 1 with a fresh
-state, `gc2` to step 2, and so on up to `gc6` for `main`. They're installed
-alongside `bratcode` by `demo/install-bratcode.sh`.
+Then walk up the build one branch at a time: `gc2`, `gc3`, … `gc6`.
+Each `gcN` is a `git checkout` plus a state reset, so every step starts
+clean.
 
-`npm run demo` / `npm run durable` / `npm run watch` still work if you'd
-rather not install anything.
+## The six-step build
 
-For the live talk, `demo/open-act.sh ollama` jumps VS Code straight to the
-relevant file+line, so the code is visible on screen next to the terminal
-instead of just narrated. Requires the `code` CLI (VS Code: Cmd+Shift+P →
-"Shell Command: Install 'code' command in PATH") — install and test this
-before the talk, not on stage.
+| Step | Branch | What it adds |
+|---|---|---|
+| 1 | [`step-1-bare-model`](../../tree/step-1-bare-model) | Just the model. Send text, get text. No tools, no loop, no memory. |
+| 2 | [`step-2-the-car-shell`](../../tree/step-2-the-car-shell) | A system prompt and a `runTurn()` loop as their own modules. Same behaviour, new shape. Everything later plugs in here. |
+| 3 | [`step-3-tools-no-permission`](../../tree/step-3-tools-no-permission) | Real file tools. Every call runs the instant it is asked. The naive agent everyone writes first. |
+| 4 | [`step-4-tiered-permissions`](../../tree/step-4-tiered-permissions) | A tier map: **safe** just runs, **confirm** asks a human, **blocked** never runs. The harness decides, not the model. |
+| 5 | [`step-5-persistent-memory`](../../tree/step-5-persistent-memory) | A flat JSON file that survives the process exiting. Quit, restart, it still remembers. |
+| 6 | [`main`](../../tree/main) | Durable execution. A multi-step plan checkpoints to disk after every step. Crash it, rerun it, it resumes instead of starting over. |
+| bonus | [`main`](../../tree/main) | Autonomous mode: no human typing, an append-only audit trail, and a session budget. Nobody watching makes the harness *stricter*, not looser. |
 
-`bratcode` and `bratcode durable` both read/write `memory.json`/`checkpoint.json`
-and a `sandbox/` directory in the project root — `bratcode reset` clears them
-to a "first run" state for a rehearsal. `bratcode durable` runs a fixed 3-step plan
-and writes `checkpoint.json` the instant each step finishes — kill the
-process (`Ctrl-C`) during the pause before a step runs, then run it again:
-completed steps are skipped, not redone. `watch` (bonus, not demoed live)
-appends every policy decision to `audit.jsonl` and enforces a session-wide
-token + action budget (`HARNESS_TOKEN_BUDGET`, `HARNESS_ACTION_BUDGET`) so
-unattended mode can't quietly run forever.
+To see what one step added:
+
+```bash
+git diff step-3-tools-no-permission..step-4-tiered-permissions
+```
+
+## Commands
+
+```bash
+bratcode            # interactive harness on the current branch
+bratcode durable    # step 6: checkpoint → Ctrl-C → rerun → resume   (main only)
+bratcode watch      # bonus: autonomous mode, polls inbox.md          (main only)
+bratcode reset      # wipe memory.json, checkpoint.json, audit.jsonl, sandbox/
+bratcode step1…6    # git checkout that step's branch, then reset
+gc1 … gc6           # the same, two keystrokes
+bratcode doctor     # preflight: deps, typecheck, Ollama, model, fresh state
+bratcode help
+```
+
+Prefer not to install anything on your PATH? `npm run demo`, `npm run durable`
+and `npm run watch` do the same from inside the repo.
+
+### The step 6 demo
+
+```bash
+gc6
+bratcode durable        # watch [SAVED] checkpoint 1/3, then 2/3 …
+                        # during step 3's "safe to crash" pause: Ctrl-C
+bratcode durable        # [SKIP] step 1, [SKIP] step 2, runs step 3, done
+cat checkpoint.json
+```
+
+### The bonus autonomous mode
+
+```bash
+gc6
+bratcode watch                                   # terminal 1
+echo "list the files in the sandbox" >> inbox.md # terminal 2
+cat audit.jsonl                                  # every policy decision, one JSON line each
+```
+
+## How it works
+
+`harness/runtime.ts` is the whole loop and fits on one screen. Everything
+else exists to be called from it.
+
+```
+call the model
+  ↓ no tool call?  → return the answer
+  ↓ tool call
+look up its tier            safe    → run it
+                            confirm → ask the human, run only on "y"
+                            blocked → refuse, tell the model, keep going
+feed the result back, repeat (max 8 rounds)
+```
+
+The tier map is a plain object. That is the entire safety story, and it is
+meant to be edited:
+
+```ts
+export const tierOf: Record<string, Tier> = {
+  list_files: "safe",
+  read_file: "safe",
+  recall_memory: "safe",
+  remember_fact: "safe",
+  write_file: "confirm",
+  delete_file: "blocked",
+};
+```
+
+Every tool is scoped to the `sandbox/` directory; a path that resolves
+outside it throws before anything runs.
+
+## Make it yours
+
+- **Swap the engine.** `HARNESS_MODEL=llama3.2:3b bratcode`, or point
+  `OLLAMA_URL` at another machine. Any Ollama model with tool calling works;
+  chattier models may call the same tool more than once.
+- **Add a tool.** Add its schema and implementation in `harness/tools.ts`, then
+  give it a tier in `tierOf`. Unknown tools default to `confirm`.
+- **Change the rules.** Move `write_file` to `safe`, or `delete_file` to
+  `confirm`, and watch the demo change.
+- **Tune the demos.** `HARNESS_STEP_PAUSE_MS` (default 4000) is the
+  "safe to crash" window in `bratcode durable`. `HARNESS_TOKEN_BUDGET` and
+  `HARNESS_ACTION_BUDGET` cap a `bratcode watch` session.
 
 ## Project layout
 
 ```
 harness/
-  model.ts          one function: talk to Ollama, get back a message
-  tools.ts          tool schemas + THE TIER MAP (safe / confirm / blocked)
-  permissions.ts     confirm(): block until a human says yes
-  memory.ts          persistent facts, a flat JSON file
-  checkpoint.ts       durable execution: which plan steps are already done
+  model.ts            one function: talk to Ollama, get back a message
   system-prompt.ts    what the agent is told, including recalled memory
-  runtime.ts          the loop: model -> tool calls -> tier gate -> repeat
+  runtime.ts          the loop: model → tool calls → tier gate → repeat
+  tools.ts            tool schemas, implementations, and the tier map
+  permissions.ts      confirm(): block until a human says yes
+  memory.ts           persistent facts in a flat JSON file
+  checkpoint.ts       durable execution: which plan steps are already done
   audit.ts            append-only audit.jsonl of every policy decision
-  ui.ts               terminal styling: the boxed header, aligned tags, spinner
+  ui.ts               terminal styling: boxed header, aligned tags, spinner
 bin/
-  bratcode            the one CLI: repl / durable / watch / reset / stepN / doctor
-  repl.ts            interactive entrypoint (the finished harness)
-  durable.ts          step 6: checkpointed plan, survives a mid-run crash
-  watch.ts            bonus: autonomous entrypoint (no human typing)
+  bratcode            the CLI: repl / durable / watch / reset / stepN / doctor
+  repl.ts             interactive entrypoint
+  durable.ts          step 6: checkpointed plan that survives a crash
+  watch.ts            bonus: autonomous entrypoint
 demo/
-  install-bratcode.sh symlink bin/bratcode onto your PATH
-  check-all-branches.sh typecheck every step branch in talk order
-  open-act.sh         jump VS Code to a file:line during the talk
+  install-bratcode.sh symlink bin/bratcode and gc1…gc6 onto your PATH
+  check-all-branches.sh typecheck every step branch in order
+  open-act.sh         jump VS Code to a file:line while presenting
 ```
 
-Read `harness/runtime.ts` first — it's the whole loop in one screen, and
-every other file exists to be called from it. This branch (`main`) is the
-finished harness — see below for how it was built up one capability at a
-time.
+Earlier branches contain only the files that exist at that step.
 
----
+## Troubleshooting
 
-## The 6-step build (+ a bonus 7th)
+- **Red squiggles in VS Code on a fresh clone.** Run `npm install` first;
+  the types arrive with it.
+- **`Can't reach Ollama`.** `brew services start ollama`, then
+  `bratcode doctor`.
+- **A step branch says `bin/durable.ts` does not exist.** Durable and watch
+  modes live on `main` only: `gc6`.
+- **The model loops or rambles.** Use `qwen2.5:7b`. Smaller models are kept
+  around as a fallback, not a recommendation; if you must, raise
+  `HARNESS_STEP_PAUSE_MS`.
 
-This repo doubles as a self-guided tutorial. Every step below is its own git
-branch, each one a real subset of the next — `git diff` between any two
-consecutive branches shows exactly what capability was added and why. Steps
-1-5 are their own branches; step 6 lives on `main` alongside a bonus,
-undemoed autonomous-mode layer (see below).
+## What this is not
 
-| Step | Branch | What it adds |
-|---|---|---|
-| 1 | [`step-1-bare-model`](../../tree/step-1-bare-model) | Just the model. No tools, no loop, no memory — it can't do anything but talk. |
-| 2 | [`step-2-the-car-shell`](../../tree/step-2-the-car-shell) | A system prompt and a conversation loop, formalized as their own modules. Still zero tools. |
-| 3 | [`step-3-tools-no-permission`](../../tree/step-3-tools-no-permission) | Real file tools. Every call runs the instant it's requested — the naive agent everyone writes first. |
-| 4 | [`step-4-tiered-permissions`](../../tree/step-4-tiered-permissions) | A tier map: safe / confirm / blocked. The harness decides what's allowed, not the model. |
-| 5 | [`step-5-persistent-memory`](../../tree/step-5-persistent-memory) | A flat file on disk that survives the process exiting — quit and restart, it still remembers. |
-| 6 | `main` (this branch) | Durable execution: a fixed multi-step plan checkpoints its progress to disk after every step. Crash mid-plan, restart, and it resumes instead of starting over. |
-| 7 (bonus) | `main` (this branch) | Autonomous mode, an audit trail, and a session budget. The agent can act with nobody watching — and gets *stricter* defaults, not looser ones. Not part of the live talk; explore it yourself. |
+Not a framework, not a product, not a replacement for Claude Code, Codex or
+Cursor. Those are finished cars. This is the kit car you build once so that
+you understand what is under the hood of the finished ones, and so you can
+build the parts that are specific to you: your tools, your tiers, your
+approval chain.
 
-Try it yourself: `gc1`, then `bratcode`, and work your way up through the
-branches one `gcN` at a time. Full talk
-script and speaker notes for presenting this live are in [TALK.md](TALK.md).
+## License
 
-## Rehearsal checklist
-
-- [ ] `ollama serve` running and reachable before doors open — don't rely on
-      venue wifi for anything, this whole demo is offline-capable on purpose
-- [ ] `bratcode doctor` green on the presenting laptop, and
-      `demo/check-all-branches.sh` clean
-- [ ] `memory.json`, `checkpoint.json`, and `inbox.md` deleted, `sandbox/`
-      empty, on **every** branch before you start — each step needs a
-      genuinely fresh state (`gcN` / `bratcode stepN` does this for you)
-- [ ] Step 6's Ctrl-C-then-resume rehearsed at least twice — see TALK.md for
-      exact timing
-- [ ] test every branch in the sequence you'll actually present them in, on
-      the machine you'll actually present from — see TALK.md for the full
-      script, timing, and screen-setup notes
+MIT. See [LICENSE](LICENSE).
