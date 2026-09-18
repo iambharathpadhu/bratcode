@@ -2,7 +2,7 @@
 
 **The model is the engine. You still have to build the car.**
 
-A personal AI agent harness in about 250 lines of TypeScript. No framework,
+A personal AI agent harness in about 600 lines of TypeScript. No framework,
 no SDK, no API key: it talks to a local model through
 [Ollama](https://ollama.com), so it runs offline and costs $0.00 per token.
 
