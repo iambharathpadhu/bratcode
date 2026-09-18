@@ -3,6 +3,7 @@
   // @types/node and tsx missing, not a bug in the code. Run `bratcode doctor`.
   // If squiggles persist after a `git checkout`, run
   // "TypeScript: Restart TS Server" from the command palette once.
+  "typescript.tsdk": "node_modules/typescript/lib",
   "typescript.enablePromptUseWorkspaceTsdk": true,
   "typescript.preferences.importModuleSpecifierEnding": "js",
   "files.exclude": {
